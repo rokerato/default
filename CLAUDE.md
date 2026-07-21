@@ -32,6 +32,10 @@ delegated to via their CLIs, invoked non-interactively through the Bash tool:
 
 - Teammates never run `git push`, never modify `.git`, and never get secrets
   in their briefs.
+- Teammates auto-approve their own tool calls (so they run non-interactively),
+  which means they act unsupervised in whatever directory they're given. For
+  any brief that writes files, dispatch into an isolated worktree
+  (`GROK_WORKTREE=1`) or a scratch dir, never the live checkout.
 - If a teammate CLI is missing or unauthenticated, do the work yourself and
   tell the user which teammate was unavailable — don't block on it.
 - First time in a session, verify availability: `team/delegate.sh --check`.

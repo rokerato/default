@@ -43,4 +43,13 @@ else
   fi
 fi
 
+cat >&2 <<'NOTE'
+
+heads-up: the installed teammates auto-approve their own tool calls
+(grok.sh --always-approve, codex.sh --sandbox workspace-write) so they can
+work non-interactively. That means a delegated teammate runs tools
+unsupervised in whatever directory it's given. To keep that sandboxed, set
+GROK_WORKTREE=1 (see team/agents.d/grok.sh) so writes land in a throwaway
+git worktree you review before integrating, rather than the live checkout.
+NOTE
 echo "done — run 'team/delegate.sh --check' in $target to verify the teammates."
