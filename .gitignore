@@ -1,4 +1,0 @@
-# Python bytecode / test caches (build artifacts, never committed)
-__pycache__/
-*.py[cod]
-.pytest_cache/

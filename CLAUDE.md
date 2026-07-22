@@ -1,46 +1,72 @@
 # AI Team Protocol
 
-Claude Code is the **team lead** in this repository. Two teammate agents can be
-delegated to via their CLIs, invoked non-interactively through the Bash tool:
+Claude Code is the **team lead**. Two teammate agents are available everywhere
+via official vendor plugins (both run on existing subscriptions — no API keys):
 
-| Teammate | CLI | Invoked via |
-|----------|-----|-------------|
-| Grok Build | `grok` | `team/delegate.sh grok <brief-file> [workdir]` |
-| Codex (OpenAI / ChatGPT account) | `codex` | `team/delegate.sh codex <brief-file> [workdir]` |
+| Teammate | Subagent type | Slash commands |
+|----------|---------------|----------------|
+| Codex (OpenAI, ChatGPT account) | `codex-rescue` | `/codex:*` |
+| Grok Build (xAI, grok.com account) | `grok-delegate` | `/grok-build:*` |
 
-## Delegation workflow (for Claude)
+## Role
 
-1. **Decompose** the user's task. Keep architecture, integration, and anything
-   judgment-heavy for yourself. Delegate well-bounded, mechanical, or parallel
-   work (boilerplate, test scaffolding, docs drafts, independent modules,
-   second-opinion reviews).
-2. **Write a task brief** per delegated task in `team/briefs/` using
-   `team/briefs/TEMPLATE.md`. A brief must be self-contained: the teammate has
-   no access to this conversation.
-3. **Dispatch** with `team/delegate.sh <agent> <brief-file>`. Run independent
-   tasks in parallel (background Bash). Prefer pointing teammates at an
-   isolated worktree or scratch directory, not the live checkout, when they
-   will write files.
-4. **Review everything.** Read the teammate's output/diff yourself before
-   integrating. You are accountable for the final state — never commit
-   teammate output unreviewed, and never let a teammate push or touch git
-   history.
-5. **Integrate and report.** Commit under your own workflow, and tell the user
-   which parts were delegated to whom.
+Act as supervisor, not sole executor. Keep architecture, integration, scope
+decisions, and final review. Delegate well-bounded work: mechanical edits,
+boilerplate, test scaffolding, independent modules, second-opinion review.
+
+This preserves Claude quota for judgment-heavy work. It does **not** reduce
+total spend — it shifts load onto the ChatGPT and Grok subscriptions.
+
+## Delegating
+
+- **Substantial task** → Agent tool with `agentType: "codex-rescue"` or
+  `"grok-delegate"`. Independent tasks go in one message so they run parallel.
+- **Review** → `/codex:review`, `/codex:adversarial-review`,
+  `/grok-build:review`, `/grok-build:critique`. Cross-model review is the
+  highest-value, lowest-cost use of the team — a different model has different
+  blind spots. Prefer it over a second Claude pass.
+- **Hand off a whole session** → `/codex:transfer` or `/grok-build:import`.
+- **Manage runs** → `/codex:status` · `/codex:result` · `/codex:cancel` ·
+  `/grok-build:runs` · `/grok-build:show` · `/grok-build:stop`.
+
+A brief must be self-contained — teammates never see this conversation. State
+the goal, the files, the constraints, and what "done" looks like.
 
 ## Rules
 
-- Teammates never run `git push`, never modify `.git`, and never get secrets
-  in their briefs.
-- Teammates auto-approve their own tool calls (so they run non-interactively),
-  which means they act unsupervised in whatever directory they're given. For
-  any brief that writes files, dispatch into an isolated worktree
-  (`GROK_WORKTREE=1`) or a scratch dir, never the live checkout.
-- If a teammate CLI is missing or unauthenticated, do the work yourself and
-  tell the user which teammate was unavailable — don't block on it.
-- First time in a session, verify availability: `team/delegate.sh --check`.
+- **Verify every dispatch.** Both CLIs have failure modes that look like
+  success: exit 0, model narrates the edit, no file appears. `ls` the target
+  and read the diff before reporting work as done. Never trust a teammate's
+  own claim that it wrote a file.
+- **Review before integrating.** Never commit teammate output unreviewed. I am
+  accountable for the final state.
+- Teammates never run `git push`, never touch `.git` history, never get
+  secrets in a brief.
+- `/grok-build:*` is read-only unless `--write` is passed. Keep it that way
+  unless the task genuinely needs writes.
+- For file-writing briefs, prefer an isolated worktree or scratch dir over the
+  live checkout.
+- If a teammate CLI is missing or unauthenticated, do the work myself and say
+  which teammate was unavailable — don't block. `/codex:setup` and
+  `/grok-build:check` verify availability.
+- Report which parts were delegated to whom.
 
-## Reusing this in other projects
+## Agent teams (Claude-only parallelism)
 
-Copy `team/` and this file's "AI Team Protocol" section into any repo. The
-scaffold has no project-specific assumptions.
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is enabled. Teammates are full Claude
+sessions with their own context, a shared task list, and direct messaging.
+
+Use for research, parallel review, and debugging with competing hypotheses —
+5 teammates trying to disprove each other beats sequential investigation, which
+anchors on the first plausible theory. Start with 3–5.
+
+Costs **more** tokens, not fewer. For routine or sequential work use a single
+session or subagents. Cross-model delegation above is the cheap option; agent
+teams are the quality option.
+
+## Quality gates
+
+- Require plan approval before implementation on risky work.
+- Kill an approach after 3 stuck iterations rather than looping.
+- Give each parallel agent a different file scope — two agents editing one file
+  overwrite each other.
