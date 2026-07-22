@@ -25,7 +25,9 @@ total spend — it shifts load onto the ChatGPT and Grok subscriptions.
   `/grok-build:review`, `/grok-build:critique`. Cross-model review is the
   highest-value, lowest-cost use of the team — a different model has different
   blind spots. Prefer it over a second Claude pass.
-- **Hand off a whole session** → `/codex:transfer` or `/grok-build:import`.
+- **Hand off a whole session** → `/codex:transfer` or `/grok-build:import`. These
+  ship the entire conversation to the vendor, so ask first, every time. A brief
+  can be sanitized; a transfer cannot.
 - **Manage runs** → `/codex:status` · `/codex:result` · `/codex:cancel` ·
   `/grok-build:runs` · `/grok-build:show` · `/grok-build:stop`.
 
@@ -35,17 +37,19 @@ the goal, the files, the constraints, and what "done" looks like.
 ## Rules
 
 - **Verify every dispatch.** Both CLIs have failure modes that look like
-  success: exit 0, model narrates the edit, no file appears. `ls` the target
-  and read the diff before reporting work as done. Never trust a teammate's
-  own claim that it wrote a file.
+  success: exit 0, model narrates the edit, no file appears. `ls` the target,
+  read the diff, and run `git status --porcelain` — a clean diff hides
+  untracked files. Never trust a teammate's own claim that it wrote a file.
 - **Review before integrating.** Never commit teammate output unreviewed. I am
   accountable for the final state.
-- Teammates never run `git push`, never touch `.git` history, never get
-  secrets in a brief.
+- Teammates never run `git push`, never touch `.git` history, and never
+  receive secrets — in a brief, a pasted file, or a transferred session.
 - `/grok-build:*` is read-only unless `--write` is passed. Keep it that way
   unless the task genuinely needs writes.
-- For file-writing briefs, prefer an isolated worktree or scratch dir over the
-  live checkout.
+- File-writing dispatches run in a worktree or scratch dir, not the live
+  checkout. The one exception is an edit I'd be happy to throw away with
+  `git checkout --`; anything larger gets isolated and lands as a patch I read
+  before applying.
 - If a teammate CLI is missing or unauthenticated, do the work myself and say
   which teammate was unavailable — don't block. `/codex:setup` and
   `/grok-build:check` verify availability.
